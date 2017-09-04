@@ -1,8 +1,7 @@
 use error::*;
 use futures::{Async, Future, Stream};
 use hyper;
-use model::{Response, UserInformation};
-use serde::Deserialize;
+use model::{self, Response};
 use serde_json;
 use std::borrow::Cow;
 
@@ -44,10 +43,19 @@ where
         }
     }
 
+    pub fn user_information(&self) -> FutureResponse<()> {
+        self.get("user-information", None)
+    }
+
+    pub fn study_queue(&self) -> FutureResponse<model::StudyQueue> {
+        self.get("study-queue", None)
+    }
+
     fn request(&self, resource: &str, options: Option<&str>) -> Result<hyper::client::Request> {
         let unparsed_uri = format!(
-            "{}/user/{}/{}/{}",
+            "{}/{}/user/{}/{}/{}",
             API_BASE_URL,
+            self.api_version,
             self.api_key,
             resource,
             options.unwrap_or("")
@@ -60,7 +68,7 @@ where
         Ok(hyper::client::Request::new(hyper::Method::Get, uri))
     }
 
-    fn send<T>(&self, request: hyper::client::Request) -> FutureResponse<T>
+    fn send_request<T>(&self, request: hyper::client::Request) -> FutureResponse<T>
     where
         T: ::serde::de::DeserializeOwned + 'static,
     {
@@ -75,8 +83,11 @@ where
         FutureResponse { future: Box::new(response) }
     }
 
-    pub fn user_information(&self) -> FutureResponse<()> {
+    fn get<T>(&self, resource: &str, options: Option<&str>) -> FutureResponse<T>
+    where
+        T: ::serde::de::DeserializeOwned + 'static,
+    {
         // TODO: Don't unwrap
-        self.send(self.request("user-information", None).unwrap())
+        self.send_request(self.request(resource, options).unwrap())
     }
 }

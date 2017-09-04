@@ -31,7 +31,7 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.user_information().map(|info| {
+    let request = client.study_queue().map(|info| {
         println!("{:#?}", info);
     });
 
