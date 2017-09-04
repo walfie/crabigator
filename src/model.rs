@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 // TODO: Optional chrono dependency
 type DateTime = u64;
-type Level = u8;
+pub(crate) type Level = u8;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Response<'a, T> {

@@ -31,7 +31,7 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.critical_items(Some(90)).map(|info| {
+    let request = client.radicals(Some(&[1, 2])).map(|info| {
         println!("{:#?}", info);
     });
 

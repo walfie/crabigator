@@ -45,39 +45,46 @@ where
     }
 
     pub fn user_information(&self) -> FutureResponse<()> {
-        self.get("user-information", None)
+        self.get("user-information")
     }
 
     pub fn study_queue(&self) -> FutureResponse<model::StudyQueue> {
-        self.get("study-queue", None)
+        self.get("study-queue")
     }
 
     pub fn level_progression(&self) -> FutureResponse<model::LevelProgression> {
-        self.get("level-progression", None)
+        self.get("level-progression")
     }
 
     pub fn srs_distribution(&self) -> FutureResponse<model::SrsDistribution> {
-        self.get("srs-distribution", None)
+        self.get("srs-distribution")
     }
 
     pub fn recent_unlocks(
         &self,
         limit: Option<u8>,
     ) -> FutureResponse<Vec<model::RecentUnlock<'static>>> {
-        let opt = limit.map(|l| l.to_string());
-        self.get("recent-unlocks", opt)
+        self.get_with_options("recent-unlocks", limit)
     }
 
     pub fn critical_items(
         &self,
         max_percentage: Option<u8>,
     ) -> FutureResponse<Vec<model::CriticalItem<'static>>> {
-        let opt = max_percentage.map(|l| l.to_string());
-        self.get("critical-items", opt)
+        self.get_with_options("critical-items", max_percentage)
     }
 
-    // TODO: Don't require String
-    fn request(&self, resource: &str, options: Option<String>) -> Result<hyper::client::Request> {
+    pub fn radicals(
+        &self,
+        levels: Option<&[model::Level]>,
+    ) -> FutureResponse<Vec<model::Radical<'static>>> {
+        self.get_with_options("radicals", levels.map(DisplayableSlice))
+    }
+
+    fn request<T>(&self, resource: &str, options: Option<T>) -> Result<hyper::client::Request>
+    where
+        T: fmt::Display,
+    {
         let unparsed_uri = format!(
             "{}/{}/user/{}/{}/{}",
             API_BASE_URL,
@@ -109,8 +116,18 @@ where
         FutureResponse { future: Box::new(response) }
     }
 
-    fn get<T>(&self, resource: &str, options: Option<String>) -> FutureResponse<T>
+    fn get<T>(&self, resource: &str) -> FutureResponse<T>
     where
+        T: ::serde::de::DeserializeOwned + 'static,
+    {
+        // TODO: Don't unwrap
+        let none: Option<String> = None;
+        self.send_request(self.request(resource, none).unwrap())
+    }
+
+    fn get_with_options<O, T>(&self, resource: &str, options: Option<O>) -> FutureResponse<T>
+    where
+        O: fmt::Display,
         T: ::serde::de::DeserializeOwned + 'static,
     {
         // TODO: Don't unwrap
@@ -126,7 +143,20 @@ where
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
             Some(ref v) => v.fmt(f),
-            None => ::std::result::Result::Ok(()),
+            None => Ok(()),
         }
+    }
+}
+
+struct DisplayableSlice<'a, T: 'a>(&'a [T]);
+impl<'a, T> fmt::Display for DisplayableSlice<'a, T>
+where
+    T: fmt::Display + 'a,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for item in self.0 {
+            write!(f, "{},", item)?
+        }
+        Ok(())
     }
 }
