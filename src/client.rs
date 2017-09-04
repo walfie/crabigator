@@ -81,6 +81,13 @@ where
         self.get_with_options("radicals", levels.map(DisplayableSlice))
     }
 
+    pub fn kanji(
+        &self,
+        levels: Option<&[model::Level]>,
+    ) -> FutureResponse<Vec<model::Kanji<'static>>> {
+        self.get_with_options("kanji", levels.map(DisplayableSlice))
+    }
+
     fn request<T>(&self, resource: &str, options: Option<T>) -> Result<hyper::client::Request>
     where
         T: fmt::Display,
