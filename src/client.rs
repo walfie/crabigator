@@ -68,6 +68,14 @@ where
         self.get("recent-unlocks", opt)
     }
 
+    pub fn critical_items(
+        &self,
+        max_percentage: Option<u8>,
+    ) -> FutureResponse<Vec<model::CriticalItem<'static>>> {
+        let opt = max_percentage.map(|l| l.to_string());
+        self.get("critical-items", opt)
+    }
+
     // TODO: Don't require String
     fn request(&self, resource: &str, options: Option<String>) -> Result<hyper::client::Request> {
         let unparsed_uri = format!(

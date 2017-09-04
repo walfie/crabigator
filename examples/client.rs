@@ -31,11 +31,9 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.recent_unlocks(Some(10)).map(|info| {
+    let request = client.critical_items(Some(90)).map(|info| {
         println!("{:#?}", info);
     });
 
-    core.run(request).chain_err(
-        || "received error from timeline",
-    )
+    core.run(request).chain_err(|| "encountered error")
 });

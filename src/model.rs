@@ -70,6 +70,7 @@ pub struct SrsDistribution {
     pub burned: SrsDistributionCounts,
 }
 
+// TODO: This should be an enum
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecentUnlock<'a> {
     #[serde(rename = "type")]
@@ -81,21 +82,23 @@ pub struct RecentUnlock<'a> {
     pub unlocked_date: DateTime,
 }
 
+// TODO: Add `percentage` field, which is a String
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CriticalItem<'a> {
-    #[serde(rename = "type")]
-    pub item_type: Cow<'a, str>,
-    pub character: Cow<'a, str>,
-    pub kana: Cow<'a, str>,
-    pub meaning: Cow<'a, str>,
-    pub level: Level,
-    pub percentage: u8,
+#[serde(tag = "type")]
+pub enum CriticalItem<'a> {
+    #[serde(rename = "kanji")]
+    Kanji(Kanji<'a>),
+    #[serde(rename = "radical")]
+    Radical(Radical<'a>),
+    #[serde(rename = "vocabulary")]
+    Vocabulary(Vocabulary<'a>),
 }
 
+// TODO: Change contents to be an enum? (with/without image)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Radical<'a> {
     pub level: Level,
-    pub character: Cow<'a, str>,
+    pub character: Option<Cow<'a, str>>,
     pub meaning: Cow<'a, str>,
     pub image_file_name: Option<Cow<'a, str>>,
     pub image_content_type: Option<Cow<'a, str>>,
@@ -131,7 +134,7 @@ pub struct Kanji<'a> {
     pub character: Cow<'a, str>,
     pub meaning: Cow<'a, str>,
     pub onyomi: Cow<'a, str>,
-    pub kunyomi: Cow<'a, str>,
+    pub kunyomi: Option<Cow<'a, str>>,
     pub important_reading: Cow<'a, str>,
     pub nanori: Option<Cow<'a, str>>,
     pub user_specific: Option<UserSpecific<'a>>,
