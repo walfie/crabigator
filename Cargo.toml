@@ -1,0 +1,8 @@
+[package]
+authors = ["Walfie <walfington@gmail.com>"]
+name = "crabigator"
+version = "0.1.0"
+
+[dependencies]
+serde = "1.0"
+serde_derive = "1.0"
