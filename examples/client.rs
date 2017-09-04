@@ -31,7 +31,7 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.kanji(Some(&[1, 5])).map(|info| {
+    let request = client.vocabulary(Some(&[1, 5])).map(|info| {
         println!("{:#?}", info);
     });
 

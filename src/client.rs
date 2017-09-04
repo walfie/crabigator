@@ -88,6 +88,13 @@ where
         self.get_with_options("kanji", levels.map(DisplayableSlice))
     }
 
+    pub fn vocabulary(
+        &self,
+        levels: Option<&[model::Level]>,
+    ) -> FutureResponse<Vec<model::Vocabulary<'static>>> {
+        self.get_with_options("vocabulary", levels.map(DisplayableSlice))
+    }
+
     fn request<T>(&self, resource: &str, options: Option<T>) -> Result<hyper::client::Request>
     where
         T: fmt::Display,
