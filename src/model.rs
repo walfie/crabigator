@@ -5,143 +5,143 @@ type DateTime = u64;
 type Level = u8;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Response<'a, T> {
-    user_information: UserInformation<'a>,
-    requested_information: T,
+pub struct Response<'a, T> {
+    pub user_information: UserInformation<'a>,
+    pub requested_information: T,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct ErrorResponse<'a> {
-    error: Error<'a>,
+pub struct ErrorResponse<'a> {
+    pub error: Error<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Error<'a> {
-    code: Cow<'a, str>,
-    message: Cow<'a, str>,
+pub struct Error<'a> {
+    pub code: Cow<'a, str>,
+    pub message: Cow<'a, str>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct UserInformation<'a> {
-    username: Cow<'a, str>,
-    gravatar: Cow<'a, str>,
-    level: Level,
-    title: Cow<'a, str>,
-    about: Cow<'a, str>,
-    website: Option<Cow<'a, str>>,
-    twitter: Option<Cow<'a, str>>,
-    topics_count: u32,
-    posts_count: u32,
-    creation_date: DateTime,
-    vacation_date: Option<DateTime>,
+pub struct UserInformation<'a> {
+    pub username: Cow<'a, str>,
+    pub gravatar: Cow<'a, str>,
+    pub level: Level,
+    pub title: Cow<'a, str>,
+    pub about: Cow<'a, str>,
+    pub website: Option<Cow<'a, str>>,
+    pub twitter: Option<Cow<'a, str>>,
+    pub topics_count: u32,
+    pub posts_count: u32,
+    pub creation_date: DateTime,
+    pub vacation_date: Option<DateTime>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct StudyQueue {
-    lessons_available: u32,
-    reviews_available: u32,
-    next_review_date: Option<DateTime>,
-    reviews_available_next_hour: u32,
-    reviews_available_next_day: u32,
+pub struct StudyQueue {
+    pub lessons_available: u32,
+    pub reviews_available: u32,
+    pub next_review_date: Option<DateTime>,
+    pub reviews_available_next_hour: u32,
+    pub reviews_available_next_day: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct LevelProgression {
-    radicals_progress: u32,
-    radicals_total: u32,
-    kanji_progress: u32,
-    kanji_total: u32,
+pub struct LevelProgression {
+    pub radicals_progress: u32,
+    pub radicals_total: u32,
+    pub kanji_progress: u32,
+    pub kanji_total: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct SrsDistributionCounts {
-    radicals: u32,
-    kanji: u32,
-    vocabulary: u32,
-    total: u32,
+pub struct SrsDistributionCounts {
+    pub radicals: u32,
+    pub kanji: u32,
+    pub vocabulary: u32,
+    pub total: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct SrsDistribution {
-    apprentice: SrsDistributionCounts,
-    guru: SrsDistributionCounts,
-    master: SrsDistributionCounts,
-    enlighten: SrsDistributionCounts,
-    burned: SrsDistributionCounts,
+pub struct SrsDistribution {
+    pub apprentice: SrsDistributionCounts,
+    pub guru: SrsDistributionCounts,
+    pub master: SrsDistributionCounts,
+    pub enlighten: SrsDistributionCounts,
+    pub burned: SrsDistributionCounts,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct RecentUnlock<'a> {
+pub struct RecentUnlock<'a> {
     #[serde(rename = "type")]
-    item_type: Cow<'a, str>,
-    character: Cow<'a, str>,
-    kana: Cow<'a, str>,
-    meaning: Cow<'a, str>,
-    level: Level,
-    unlocked_date: DateTime,
+    pub item_type: Cow<'a, str>,
+    pub character: Cow<'a, str>,
+    pub kana: Cow<'a, str>,
+    pub meaning: Cow<'a, str>,
+    pub level: Level,
+    pub unlocked_date: DateTime,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct CriticalItem<'a> {
+pub struct CriticalItem<'a> {
     #[serde(rename = "type")]
-    item_type: Cow<'a, str>,
-    character: Cow<'a, str>,
-    kana: Cow<'a, str>,
-    meaning: Cow<'a, str>,
-    level: Level,
-    percentage: u8,
+    pub item_type: Cow<'a, str>,
+    pub character: Cow<'a, str>,
+    pub kana: Cow<'a, str>,
+    pub meaning: Cow<'a, str>,
+    pub level: Level,
+    pub percentage: u8,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Radical<'a> {
-    level: Level,
-    character: Cow<'a, str>,
-    meaning: Cow<'a, str>,
-    image_file_name: Option<Cow<'a, str>>,
-    image_content_type: Option<Cow<'a, str>>,
-    image_file_size: Option<u32>,
-    user_specific: Option<UserSpecific<'a>>,
-    image: Option<Cow<'a, str>>,
+pub struct Radical<'a> {
+    pub level: Level,
+    pub character: Cow<'a, str>,
+    pub meaning: Cow<'a, str>,
+    pub image_file_name: Option<Cow<'a, str>>,
+    pub image_content_type: Option<Cow<'a, str>>,
+    pub image_file_size: Option<u32>,
+    pub user_specific: Option<UserSpecific<'a>>,
+    pub image: Option<Cow<'a, str>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct UserSpecific<'a> {
-    srs: Cow<'a, str>,
-    srs_numeric: u32,
-    unlocked_date: Option<DateTime>,
-    available_date: Option<DateTime>,
-    burned: bool,
-    burned_date: Option<DateTime>, // can be 0
-    meaning_correct: u32,
-    meaning_incorrect: u32,
-    meaning_max_streak: u32,
-    meaning_current_streak: u32,
-    reading_correct: Option<u32>, // is null for radicals
-    reading_incorrect: Option<u32>,
-    reading_max_streak: Option<u32>,
-    reading_current_streak: Option<u32>,
-    meaning_note: Option<Cow<'a, str>>,
-    reading_note: Option<Cow<'a, str>>,
-    user_synonyms: Option<Vec<Cow<'a, str>>>, // is null if no synonyms
+pub struct UserSpecific<'a> {
+    pub srs: Cow<'a, str>,
+    pub srs_numeric: u32,
+    pub unlocked_date: Option<DateTime>,
+    pub available_date: Option<DateTime>,
+    pub burned: bool,
+    pub burned_date: Option<DateTime>, // can be 0
+    pub meaning_correct: u32,
+    pub meaning_incorrect: u32,
+    pub meaning_max_streak: u32,
+    pub meaning_current_streak: u32,
+    pub reading_correct: Option<u32>, // is null for radicals
+    pub reading_incorrect: Option<u32>,
+    pub reading_max_streak: Option<u32>,
+    pub reading_current_streak: Option<u32>,
+    pub meaning_note: Option<Cow<'a, str>>,
+    pub reading_note: Option<Cow<'a, str>>,
+    pub user_synonyms: Option<Vec<Cow<'a, str>>>, // is null if no synonyms
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Kanji<'a> {
-    level: Level,
-    character: Cow<'a, str>,
-    meaning: Cow<'a, str>,
-    onyomi: Cow<'a, str>,
-    kunyomi: Cow<'a, str>,
-    important_reading: Cow<'a, str>,
-    nanori: Option<Cow<'a, str>>,
-    user_specific: Option<UserSpecific<'a>>,
+pub struct Kanji<'a> {
+    pub level: Level,
+    pub character: Cow<'a, str>,
+    pub meaning: Cow<'a, str>,
+    pub onyomi: Cow<'a, str>,
+    pub kunyomi: Cow<'a, str>,
+    pub important_reading: Cow<'a, str>,
+    pub nanori: Option<Cow<'a, str>>,
+    pub user_specific: Option<UserSpecific<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Vocabulary<'a> {
-    level: Level,
-    character: Cow<'a, str>,
-    kana: Cow<'a, str>,
-    meaning: Cow<'a, str>,
-    user_specific: Option<UserSpecific<'a>>,
+pub struct Vocabulary<'a> {
+    pub level: Level,
+    pub character: Cow<'a, str>,
+    pub kana: Cow<'a, str>,
+    pub meaning: Cow<'a, str>,
+    pub user_specific: Option<UserSpecific<'a>>,
 }

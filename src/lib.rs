@@ -1,4 +1,15 @@
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate serde_derive;
 
-mod model;
+extern crate hyper;
+extern crate futures;
+extern crate serde;
+extern crate serde_json;
+
+pub mod model;
+mod client;
+pub mod error;
+
+pub use client::Client;
