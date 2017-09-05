@@ -72,16 +72,33 @@ pub struct SrsDistribution {
     pub burned: SrsDistributionCounts,
 }
 
-// TODO: This should be an enum
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct RecentUnlock<'a> {
-    #[serde(rename = "type")]
-    pub item_type: Cow<'a, str>,
-    pub character: Cow<'a, str>,
-    pub kana: Cow<'a, str>,
-    pub meaning: Cow<'a, str>,
-    pub level: Level,
-    pub unlocked_date: DateTime,
+    unlocked_date: DateTime,
+    item: Item<'a>,
+}
+
+impl<'de, 'a> Deserialize<'de> for RecentUnlock<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct UnlockedDateHelper {
+            unlocked_date: DateTime,
+        }
+
+        let v = serde_json::Value::deserialize(deserializer)?;
+        let UnlockedDateHelper { unlocked_date } = UnlockedDateHelper::deserialize(&v).map_err(
+            de::Error::custom,
+        )?;
+
+        let item = Item::deserialize(v).map_err(de::Error::custom)?;
+        Ok(RecentUnlock {
+            unlocked_date,
+            item,
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
