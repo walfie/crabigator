@@ -1,27 +1,29 @@
+use serde::de::{self, Deserialize, Deserializer};
+use serde_json;
 use std::borrow::Cow;
 
 // TODO: Optional chrono dependency
 type DateTime = u64;
 pub(crate) type Level = u8;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Response<'a, T> {
     pub user_information: UserInformation<'a>,
     pub requested_information: T,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct ErrorResponse<'a> {
     pub error: Error<'a>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Error<'a> {
     pub code: Cow<'a, str>,
     pub message: Cow<'a, str>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct UserInformation<'a> {
     pub username: Cow<'a, str>,
     pub gravatar: Cow<'a, str>,
@@ -36,7 +38,7 @@ pub struct UserInformation<'a> {
     pub vacation_date: Option<DateTime>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct StudyQueue {
     pub lessons_available: u32,
     pub reviews_available: u32,
@@ -45,7 +47,7 @@ pub struct StudyQueue {
     pub reviews_available_next_day: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct LevelProgression {
     pub radicals_progress: u32,
     pub radicals_total: u32,
@@ -53,7 +55,7 @@ pub struct LevelProgression {
     pub kanji_total: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct SrsDistributionCounts {
     pub radicals: u32,
     pub kanji: u32,
@@ -61,7 +63,7 @@ pub struct SrsDistributionCounts {
     pub total: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct SrsDistribution {
     pub apprentice: SrsDistributionCounts,
     pub guru: SrsDistributionCounts,
@@ -71,7 +73,7 @@ pub struct SrsDistribution {
 }
 
 // TODO: This should be an enum
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct RecentUnlock<'a> {
     #[serde(rename = "type")]
     pub item_type: Cow<'a, str>,
@@ -82,10 +84,41 @@ pub struct RecentUnlock<'a> {
     pub unlocked_date: DateTime,
 }
 
-// TODO: Add `percentage` field, which is a String
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct CriticalItem<'a> {
+    percentage: u8,
+    item: Item<'a>,
+}
+
+impl<'de, 'a> Deserialize<'de> for CriticalItem<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct PercentageHelper<'a> {
+            percentage: Cow<'a, str>,
+        }
+
+        let v = serde_json::Value::deserialize(deserializer)?;
+        let PercentageHelper { percentage } =
+            PercentageHelper::deserialize(&v).map_err(de::Error::custom)?;
+
+        let percentage = percentage.parse::<u8>().map_err(|_| {
+            de::Error::invalid_value(
+                de::Unexpected::Str(percentage.as_ref()),
+                &"a numeric string",
+            )
+        })?;
+
+        let item = Item::deserialize(v).map_err(de::Error::custom)?;
+        Ok(CriticalItem { percentage, item })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "type")]
-pub enum CriticalItem<'a> {
+pub enum Item<'a> {
     #[serde(rename = "kanji")]
     Kanji(Kanji<'a>),
     #[serde(rename = "radical")]
@@ -95,7 +128,7 @@ pub enum CriticalItem<'a> {
 }
 
 // TODO: Change contents to be an enum? (with/without image)
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Radical<'a> {
     pub level: Level,
     pub character: Option<Cow<'a, str>>,
@@ -107,7 +140,7 @@ pub struct Radical<'a> {
     pub image: Option<Cow<'a, str>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct UserSpecific<'a> {
     pub srs: Cow<'a, str>,
     pub srs_numeric: u32,
@@ -128,7 +161,7 @@ pub struct UserSpecific<'a> {
     pub user_synonyms: Option<Vec<Cow<'a, str>>>, // is null if no synonyms
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Kanji<'a> {
     pub level: Level,
     pub character: Cow<'a, str>,
@@ -140,7 +173,7 @@ pub struct Kanji<'a> {
     pub user_specific: Option<UserSpecific<'a>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Vocabulary<'a> {
     pub level: Level,
     pub character: Cow<'a, str>,
