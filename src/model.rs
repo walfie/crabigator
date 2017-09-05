@@ -144,17 +144,54 @@ pub enum Item<'a> {
     Vocabulary(Vocabulary<'a>),
 }
 
-// TODO: Change contents to be an enum? (with/without image)
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Radical<'a> {
     pub level: Level,
-    pub character: Option<Cow<'a, str>>,
+    pub data: RadicalData<'a>,
     pub meaning: Cow<'a, str>,
-    pub image_file_name: Option<Cow<'a, str>>,
-    pub image_content_type: Option<Cow<'a, str>>,
-    pub image_file_size: Option<u32>,
     pub user_specific: Option<UserSpecific<'a>>,
-    pub image: Option<Cow<'a, str>>,
+}
+
+#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum RadicalData<'a> {
+    #[serde(rename = "character")]
+    Character { character: Cow<'a, str> },
+    Image {
+        #[serde(rename = "image_file_name")]
+        file_name: Cow<'a, str>,
+        #[serde(rename = "image_content_type")]
+        content_type: Cow<'a, str>,
+        #[serde(rename = "image_file_size")]
+        file_size: u32,
+        #[serde(rename = "image")]
+        url: Cow<'a, str>,
+    },
+}
+
+impl<'de, 'a> Deserialize<'de> for Radical<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct RadicalHelper<'a> {
+            level: Level,
+            meaning: Cow<'a, str>,
+            user_specific: Option<UserSpecific<'a>>,
+        }
+
+        let v = serde_json::Value::deserialize(deserializer)?;
+        let common = RadicalHelper::deserialize(&v).map_err(de::Error::custom)?;
+        let data = RadicalData::deserialize(&v).map_err(de::Error::custom)?;
+
+        Ok(Radical {
+            level: common.level,
+            meaning: common.meaning,
+            user_specific: common.user_specific,
+            data,
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
