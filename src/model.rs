@@ -164,18 +164,41 @@ pub struct UserSpecific<'a> {
     pub unlocked_date: Option<DateTime>,
     pub available_date: Option<DateTime>,
     pub burned: bool,
+    #[serde(deserialize_with = "deserialize_as_optional_datetime")]
     pub burned_date: Option<DateTime>, // can be 0
     pub meaning_correct: u32,
     pub meaning_incorrect: u32,
     pub meaning_max_streak: u32,
     pub meaning_current_streak: u32,
+    pub meaning_note: Option<Cow<'a, str>>,
     pub reading_correct: Option<u32>, // is null for radicals
     pub reading_incorrect: Option<u32>,
     pub reading_max_streak: Option<u32>,
     pub reading_current_streak: Option<u32>,
-    pub meaning_note: Option<Cow<'a, str>>,
     pub reading_note: Option<Cow<'a, str>>,
-    pub user_synonyms: Option<Vec<Cow<'a, str>>>, // is null if no synonyms
+    #[serde(deserialize_with = "deserialize_null_as_empty_vec")]
+    pub user_synonyms: Vec<Cow<'a, str>>,
+}
+
+pub fn deserialize_as_optional_datetime<'de, D>(
+    deserializer: D,
+) -> Result<Option<DateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<DateTime>::deserialize(deserializer).map(
+        |datetime| {
+            if datetime == Some(0) { None } else { datetime }
+        },
+    )
+}
+
+pub fn deserialize_null_as_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<Vec<T>>::deserialize(deserializer).map(|items| items.unwrap_or(Vec::with_capacity(0)))
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
