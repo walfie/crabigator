@@ -2,8 +2,22 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde_json;
 use std::borrow::Cow;
 
-// TODO: Optional chrono dependency
+#[cfg(feature = "chrono")]
+type DateTime = ::chrono::DateTime<::chrono::Utc>;
+#[cfg(feature = "chrono")]
+use chrono::serde::ts_seconds;
+
+#[cfg(not(feature = "chrono"))]
 type DateTime = u64;
+#[cfg(not(feature = "chrono"))]
+fn ts_seconds<'de, D>(deserializer: D) -> Result<DateTime, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    DateTime::deserialize(deserializer)
+}
+
+
 pub(crate) type Level = u8;
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -34,6 +48,7 @@ pub struct UserInformation<'a> {
     pub twitter: Option<Cow<'a, str>>,
     pub topics_count: u32,
     pub posts_count: u32,
+    #[serde(with = "ts_seconds")]
     pub creation_date: DateTime,
     pub vacation_date: Option<DateTime>,
 }
@@ -223,11 +238,20 @@ pub fn deserialize_as_optional_datetime<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    Option::<DateTime>::deserialize(deserializer).map(
-        |datetime| {
+    Option::<DateTime>::deserialize(deserializer).map(|datetime| {
+        #[cfg(feature = "chrono")]
+        {
+            match datetime {
+                Some(dt) if dt.timestamp() == 0 => None,
+                other => other,
+            }
+        }
+
+        #[cfg(not(feature = "chrono"))]
+        {
             if datetime == Some(0) { None } else { datetime }
-        },
-    )
+        }
+    })
 }
 
 pub fn deserialize_null_as_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
