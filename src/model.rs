@@ -1,22 +1,37 @@
+use chrono::serde::ts_seconds;
 use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::Serializer;
 use serde_json;
 use std::borrow::Cow;
-
-#[cfg(feature = "chrono")]
 type DateTime = ::chrono::DateTime<::chrono::Utc>;
-#[cfg(feature = "chrono")]
-use chrono::serde::ts_seconds;
 
-#[cfg(not(feature = "chrono"))]
-type DateTime = u64;
-#[cfg(not(feature = "chrono"))]
-fn ts_seconds<'de, D>(deserializer: D) -> Result<DateTime, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    DateTime::deserialize(deserializer)
+mod ts_seconds_opt {
+    use super::*;
+    use serde::ser::Serialize;
+
+    #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+    struct DateTimeSeconds(
+        #[serde(with = "ts_seconds")]
+        DateTime
+    );
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::<DateTimeSeconds>::deserialize(deserializer).map(|result| match result {
+            Some(ref dt) if dt.0.timestamp() != 0 => Some(dt.0),
+            _ => None,
+        })
+    }
+
+    pub fn serialize<S>(dt: &Option<DateTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Option::<DateTime>::serialize(&dt, serializer)
+    }
 }
-
 
 pub(crate) type Level = u8;
 
@@ -50,6 +65,7 @@ pub struct UserInformation<'a> {
     pub posts_count: u32,
     #[serde(with = "ts_seconds")]
     pub creation_date: DateTime,
+    #[serde(with = "ts_seconds_opt")]
     pub vacation_date: Option<DateTime>,
 }
 
@@ -57,6 +73,7 @@ pub struct UserInformation<'a> {
 pub struct StudyQueue {
     pub lessons_available: u32,
     pub reviews_available: u32,
+    #[serde(with = "ts_seconds_opt")]
     pub next_review_date: Option<DateTime>,
     pub reviews_available_next_hour: u32,
     pub reviews_available_next_day: u32,
@@ -213,10 +230,12 @@ impl<'de, 'a> Deserialize<'de> for Radical<'a> {
 pub struct UserSpecific<'a> {
     pub srs: Cow<'a, str>,
     pub srs_numeric: u32,
+    #[serde(with = "ts_seconds_opt")]
     pub unlocked_date: Option<DateTime>,
+    #[serde(with = "ts_seconds_opt")]
     pub available_date: Option<DateTime>,
     pub burned: bool,
-    #[serde(deserialize_with = "deserialize_as_optional_datetime")]
+    #[serde(with = "ts_seconds_opt")]
     pub burned_date: Option<DateTime>, // can be 0
     pub meaning_correct: u32,
     pub meaning_incorrect: u32,
@@ -230,28 +249,6 @@ pub struct UserSpecific<'a> {
     pub reading_note: Option<Cow<'a, str>>,
     #[serde(deserialize_with = "deserialize_null_as_empty_vec")]
     pub user_synonyms: Vec<Cow<'a, str>>,
-}
-
-pub fn deserialize_as_optional_datetime<'de, D>(
-    deserializer: D,
-) -> Result<Option<DateTime>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Option::<DateTime>::deserialize(deserializer).map(|datetime| {
-        #[cfg(feature = "chrono")]
-        {
-            match datetime {
-                Some(dt) if dt.timestamp() == 0 => None,
-                other => other,
-            }
-        }
-
-        #[cfg(not(feature = "chrono"))]
-        {
-            if datetime == Some(0) { None } else { datetime }
-        }
-    })
 }
 
 pub fn deserialize_null_as_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
