@@ -1,7 +1,6 @@
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serializer;
 use serde_json;
-use std::borrow::Cow;
 
 pub(crate) type Level = u8;
 
@@ -14,31 +13,31 @@ use chrono::serde::ts_seconds;
 type DateTime = i64;
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Response<'a, T> {
-    pub user_information: UserInformation<'a>,
+pub struct Response<T> {
+    pub user_information: UserInformation,
     pub requested_information: T,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct ErrorResponse<'a> {
-    pub error: Error<'a>,
+pub struct ErrorResponse {
+    pub error: Error,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Error<'a> {
-    pub code: Cow<'a, str>,
-    pub message: Cow<'a, str>,
+pub struct Error {
+    pub code: String,
+    pub message: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct UserInformation<'a> {
-    pub username: Cow<'a, str>,
-    pub gravatar: Cow<'a, str>,
+pub struct UserInformation {
+    pub username: String,
+    pub gravatar: String,
     pub level: Level,
-    pub title: Cow<'a, str>,
-    pub about: Cow<'a, str>,
-    pub website: Option<Cow<'a, str>>,
-    pub twitter: Option<Cow<'a, str>>,
+    pub title: String,
+    pub about: String,
+    pub website: Option<String>,
+    pub twitter: Option<String>,
     pub topics_count: u32,
     pub posts_count: u32,
     #[serde(with = "ts_seconds")]
@@ -83,12 +82,12 @@ pub struct SrsDistribution {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct RecentUnlock<'a> {
+pub struct RecentUnlock {
     unlocked_date: DateTime,
-    item: Item<'a>,
+    item: Item,
 }
 
-impl<'de, 'a> Deserialize<'de> for RecentUnlock<'a> {
+impl<'de, 'a> Deserialize<'de> for RecentUnlock {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -112,19 +111,19 @@ impl<'de, 'a> Deserialize<'de> for RecentUnlock<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct CriticalItem<'a> {
+pub struct CriticalItem {
     percentage: u8,
-    item: Item<'a>,
+    item: Item,
 }
 
-impl<'de, 'a> Deserialize<'de> for CriticalItem<'a> {
+impl<'de, 'a> Deserialize<'de> for CriticalItem {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        struct PercentageHelper<'a> {
-            percentage: Cow<'a, str>,
+        struct PercentageHelper {
+            percentage: String,
         }
 
         let v = serde_json::Value::deserialize(deserializer)?;
@@ -145,50 +144,50 @@ impl<'de, 'a> Deserialize<'de> for CriticalItem<'a> {
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "type")]
-pub enum Item<'a> {
+pub enum Item {
     #[serde(rename = "kanji")]
-    Kanji(Kanji<'a>),
+    Kanji(Kanji),
     #[serde(rename = "radical")]
-    Radical(Radical<'a>),
+    Radical(Radical),
     #[serde(rename = "vocabulary")]
-    Vocabulary(Vocabulary<'a>),
+    Vocabulary(Vocabulary),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct Radical<'a> {
+pub struct Radical {
     pub level: Level,
-    pub data: RadicalData<'a>,
-    pub meaning: Cow<'a, str>,
-    pub user_specific: Option<UserSpecific<'a>>,
+    pub data: RadicalData,
+    pub meaning: String,
+    pub user_specific: Option<UserSpecific>,
 }
 
 #[serde(untagged)]
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub enum RadicalData<'a> {
+pub enum RadicalData {
     #[serde(rename = "character")]
-    Character { character: Cow<'a, str> },
+    Character { character: String },
     Image {
         #[serde(rename = "image_file_name")]
-        file_name: Cow<'a, str>,
+        file_name: String,
         #[serde(rename = "image_content_type")]
-        content_type: Cow<'a, str>,
+        content_type: String,
         #[serde(rename = "image_file_size")]
         file_size: u32,
         #[serde(rename = "image")]
-        url: Cow<'a, str>,
+        url: String,
     },
 }
 
-impl<'de, 'a> Deserialize<'de> for Radical<'a> {
+impl<'de, 'a> Deserialize<'de> for Radical {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        struct RadicalHelper<'a> {
+        struct RadicalHelper {
             level: Level,
-            meaning: Cow<'a, str>,
-            user_specific: Option<UserSpecific<'a>>,
+            meaning: String,
+            user_specific: Option<UserSpecific>,
         }
 
         let v = serde_json::Value::deserialize(deserializer)?;
@@ -205,8 +204,8 @@ impl<'de, 'a> Deserialize<'de> for Radical<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct UserSpecific<'a> {
-    pub srs: Cow<'a, str>,
+pub struct UserSpecific {
+    pub srs: String,
     pub srs_numeric: u32,
     #[serde(with = "ts_seconds_opt")]
     pub unlocked_date: Option<DateTime>,
@@ -219,35 +218,35 @@ pub struct UserSpecific<'a> {
     pub meaning_incorrect: u32,
     pub meaning_max_streak: u32,
     pub meaning_current_streak: u32,
-    pub meaning_note: Option<Cow<'a, str>>,
+    pub meaning_note: Option<String>,
     pub reading_correct: Option<u32>, // is null for radicals
     pub reading_incorrect: Option<u32>,
     pub reading_max_streak: Option<u32>,
     pub reading_current_streak: Option<u32>,
-    pub reading_note: Option<Cow<'a, str>>,
+    pub reading_note: Option<String>,
     #[serde(deserialize_with = "deserialize_null_as_empty_vec")]
-    pub user_synonyms: Vec<Cow<'a, str>>,
+    pub user_synonyms: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Kanji<'a> {
+pub struct Kanji {
     pub level: Level,
-    pub character: Cow<'a, str>,
-    pub meaning: Cow<'a, str>,
-    pub onyomi: Cow<'a, str>,
-    pub kunyomi: Option<Cow<'a, str>>,
-    pub important_reading: Cow<'a, str>,
-    pub nanori: Option<Cow<'a, str>>,
-    pub user_specific: Option<UserSpecific<'a>>,
+    pub character: String,
+    pub meaning: String,
+    pub onyomi: String,
+    pub kunyomi: Option<String>,
+    pub important_reading: String,
+    pub nanori: Option<String>,
+    pub user_specific: Option<UserSpecific>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Vocabulary<'a> {
+pub struct Vocabulary {
     pub level: Level,
-    pub character: Cow<'a, str>,
-    pub kana: Cow<'a, str>,
-    pub meaning: Cow<'a, str>,
-    pub user_specific: Option<UserSpecific<'a>>,
+    pub character: String,
+    pub kana: String,
+    pub meaning: String,
+    pub user_specific: Option<UserSpecific>,
 }
 
 pub fn deserialize_null_as_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
