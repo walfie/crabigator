@@ -2,11 +2,9 @@ use error::*;
 use futures::{Async, Future, Stream};
 use hyper;
 use model::{self, Response};
-use serde::Deserialize;
 use serde_json;
 use std::borrow::Cow;
 use std::fmt;
-use std::marker::PhantomData;
 
 const API_BASE_URL: &'static str = "https://www.wanikani.com/api";
 const DEFAULT_API_VERSION: &'static str = "v1.4";
@@ -17,51 +15,17 @@ pub struct Client<'a, C: 'a> {
     api_version: Cow<'a, str>,
 }
 
-#[derive(Debug)]
-pub struct UnparsedResponse<T> {
-    chunk: hyper::Chunk,
-    expected: PhantomData<T>,
+// TODO: Maybe not always 'static
+pub struct FutureResponse<T> {
+    future: Box<Future<Item = Response<'static, T>, Error = Error>>,
 }
-
-impl<'a, T> UnparsedResponse<T>
-where
-    T: Deserialize<'a>,
-{
-    pub fn parse(&'a self) -> Result<Response<'a, T>> {
-        let bytes = self.chunk.as_ref();
-        serde_json::from_slice(bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
-    }
-}
-
-impl<T> UnparsedResponse<T>
-where
-    T: ::serde::de::DeserializeOwned,
-{
-    pub fn parse_owned(&self) -> Result<Response<'static, T>> {
-        let bytes = self.chunk.as_ref();
-        serde_json::from_slice(bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
-    }
-}
-
-pub struct FutureResponse<T>(Box<Future<Item = UnparsedResponse<T>, Error = Error>>);
 
 impl<T> Future for FutureResponse<T> {
-    type Item = UnparsedResponse<T>;
+    type Item = Response<'static, T>;
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {
-        self.0.poll()
-    }
-}
-
-impl<T> FutureResponse<T>
-where
-    T: Clone + ::serde::de::DeserializeOwned + 'static,
-{
-    pub fn parse(self) -> Box<Future<Item = Response<'static, T>, Error = Error>> {
-        Box::new(self.0.and_then(
-            |res| res.parse_owned().map(|parsed| parsed.clone()),
-        ))
+        self.future.poll()
     }
 }
 
@@ -153,20 +117,17 @@ where
 
     fn send_request<T>(&self, request: hyper::client::Request) -> FutureResponse<T>
     where
-        T: 'static,
+        T: ::serde::de::DeserializeOwned + 'static,
     {
         let response = self.hyper_client
             .request(request)
             .and_then(|res| res.body().concat2())
-            .then(|res| match res {
-                Ok(chunk) => Ok(UnparsedResponse {
-                    chunk,
-                    expected: PhantomData,
-                }),
-                Err(e) => Err(Error::with_chain(e, ErrorKind::Http)),
+            .then(|res| res.chain_err(|| ErrorKind::Http))
+            .and_then(|bytes| {
+                serde_json::from_slice(&bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
             });
 
-        FutureResponse(Box::new(response))
+        FutureResponse { future: Box::new(response) }
     }
 
     fn get<T>(&self, resource: &str) -> FutureResponse<T>

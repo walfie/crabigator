@@ -31,7 +31,7 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.radicals(Some(&[1])).parse().map(|info| {
+    let request = client.radicals(Some(&[1])).map(|info| {
         println!("{:#?}", info);
     });
 
