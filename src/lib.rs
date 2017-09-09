@@ -15,4 +15,4 @@ pub mod model;
 mod client;
 pub mod error;
 
-pub use client::Client;
+pub use client::{Client, FutureResponse};

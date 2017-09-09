@@ -2,6 +2,7 @@ use error::*;
 use futures::{Async, Future, Stream};
 use hyper;
 use model::{self, Response};
+use serde::de::DeserializeOwned;
 use serde_json;
 use std::borrow::Cow;
 use std::fmt;
@@ -15,16 +16,14 @@ pub struct Client<'a, C: 'a> {
     api_version: Cow<'a, str>,
 }
 
-pub struct FutureResponse<T> {
-    future: Box<Future<Item = Response<T>, Error = Error>>,
-}
+pub struct FutureResponse<T>(Box<Future<Item = Response<T>, Error = Error>>);
 
 impl<T> Future for FutureResponse<T> {
     type Item = Response<T>;
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {
-        self.future.poll()
+        self.0.poll()
     }
 }
 
@@ -85,9 +84,9 @@ where
         self.get_with_options("vocabulary", levels.map(DisplayableSlice))
     }
 
-    fn request<T>(&self, resource: &str, options: Option<T>) -> Result<hyper::client::Request>
+    fn request<O>(&self, resource: &str, options: Option<O>) -> Result<hyper::client::Request>
     where
-        T: fmt::Display,
+        O: fmt::Display,
     {
         let unparsed_uri = format!(
             "{}/{}/user/{}/{}/{}",
@@ -105,37 +104,43 @@ where
         Ok(hyper::client::Request::new(hyper::Method::Get, uri))
     }
 
-    fn send_request<T>(&self, request: hyper::client::Request) -> FutureResponse<T>
+    fn send_request<T>(&self, request: Result<hyper::client::Request>) -> FutureResponse<T>
     where
-        T: ::serde::de::DeserializeOwned + 'static,
+        T: DeserializeOwned + 'static,
     {
-        let response = self.hyper_client
-            .request(request)
-            .and_then(|res| res.body().concat2())
-            .then(|res| res.chain_err(|| ErrorKind::Http))
-            .and_then(|bytes| {
-                serde_json::from_slice(&bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
-            });
+        match request {
+            Ok(req) => {
+                let resp = self.hyper_client
+                    .request(req)
+                    .and_then(|res| res.body().concat2())
+                    .then(|res| res.chain_err(|| ErrorKind::Http))
+                    .and_then(|bytes| {
+                        serde_json::from_slice(&bytes).chain_err(|| {
+                            ErrorKind::Deserialize(bytes.to_vec())
+                        })
+                    });
 
-        FutureResponse { future: Box::new(response) }
+                FutureResponse(Box::new(resp))
+            }
+            Err(e) => FutureResponse(Box::new(::futures::future::err(e))),
+
+        }
     }
 
     fn get<T>(&self, resource: &str) -> FutureResponse<T>
     where
-        T: ::serde::de::DeserializeOwned + 'static,
+        T: DeserializeOwned + 'static,
     {
-        // TODO: Don't unwrap
         let none: Option<String> = None;
-        self.send_request(self.request(resource, none).unwrap())
+        self.send_request(self.request(resource, none))
     }
 
     fn get_with_options<O, T>(&self, resource: &str, options: Option<O>) -> FutureResponse<T>
     where
         O: fmt::Display,
-        T: ::serde::de::DeserializeOwned + 'static,
+        T: DeserializeOwned + 'static,
     {
-        // TODO: Don't unwrap
-        self.send_request(self.request(resource, options).unwrap())
+        self.send_request(self.request(resource, options))
     }
 }
 
