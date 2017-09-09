@@ -15,13 +15,12 @@ pub struct Client<'a, C: 'a> {
     api_version: Cow<'a, str>,
 }
 
-// TODO: Maybe not always 'static
 pub struct FutureResponse<T> {
-    future: Box<Future<Item = Response<'static, T>, Error = Error>>,
+    future: Box<Future<Item = Response<T>, Error = Error>>,
 }
 
 impl<T> Future for FutureResponse<T> {
-    type Item = Response<'static, T>;
+    type Item = Response<T>;
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {
@@ -60,38 +59,29 @@ where
         self.get("srs-distribution")
     }
 
-    pub fn recent_unlocks(
-        &self,
-        limit: Option<u8>,
-    ) -> FutureResponse<Vec<model::RecentUnlock<'static>>> {
+    pub fn recent_unlocks(&self, limit: Option<u8>) -> FutureResponse<Vec<model::RecentUnlock>> {
         self.get_with_options("recent-unlocks", limit)
     }
 
     pub fn critical_items(
         &self,
         max_percentage: Option<u8>,
-    ) -> FutureResponse<Vec<model::CriticalItem<'static>>> {
+    ) -> FutureResponse<Vec<model::CriticalItem>> {
         self.get_with_options("critical-items", max_percentage)
     }
 
-    pub fn radicals(
-        &self,
-        levels: Option<&[model::Level]>,
-    ) -> FutureResponse<Vec<model::Radical<'static>>> {
+    pub fn radicals(&self, levels: Option<&[model::Level]>) -> FutureResponse<Vec<model::Radical>> {
         self.get_with_options("radicals", levels.map(DisplayableSlice))
     }
 
-    pub fn kanji(
-        &self,
-        levels: Option<&[model::Level]>,
-    ) -> FutureResponse<Vec<model::Kanji<'static>>> {
+    pub fn kanji(&self, levels: Option<&[model::Level]>) -> FutureResponse<Vec<model::Kanji>> {
         self.get_with_options("kanji", levels.map(DisplayableSlice))
     }
 
     pub fn vocabulary(
         &self,
         levels: Option<&[model::Level]>,
-    ) -> FutureResponse<Vec<model::Vocabulary<'static>>> {
+    ) -> FutureResponse<Vec<model::Vocabulary>> {
         self.get_with_options("vocabulary", levels.map(DisplayableSlice))
     }
 
