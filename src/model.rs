@@ -292,7 +292,12 @@ mod ts_seconds_opt {
     where
         S: Serializer,
     {
-        Option::<DateTime>::serialize(&dt, serializer)
+        #[cfg(feature = "chrono")]
+        {
+            Option::<DateTimeSeconds>::serialize(&dt.map(DateTimeSeconds), serializer)
+        }
+
+        #[cfg(not(feature = "chrono"))] Option::<DateTime>::serialize(&dt, serializer)
     }
 }
 
