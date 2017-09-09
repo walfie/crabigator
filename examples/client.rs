@@ -31,8 +31,9 @@ quick_main!(|| -> Result<()> {
 
     let client = Client::new(&hyper_client, api_key);
 
-    let request = client.radicals(Some(&[1])).parse().map(|info| {
-        println!("{:#?}", info);
+    let request = client.radicals(Some(&[1])).map(|info| {
+        let parsed = info.parse();
+        println!("{:#?}", parsed);
     });
 
     core.run(request).chain_err(|| "encountered error")

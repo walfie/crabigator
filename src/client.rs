@@ -2,7 +2,7 @@ use error::*;
 use futures::{Async, Future, Stream};
 use hyper;
 use model::{self, Response};
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json;
 use std::borrow::Cow;
 use std::fmt;
@@ -23,21 +23,11 @@ pub struct UnparsedResponse<T> {
     expected: PhantomData<T>,
 }
 
-impl<'a, T> UnparsedResponse<T>
-where
-    T: Deserialize<'a>,
-{
-    pub fn parse(&'a self) -> Result<Response<'a, T>> {
-        let bytes = self.chunk.as_ref();
-        serde_json::from_slice(bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
-    }
-}
-
 impl<T> UnparsedResponse<T>
 where
-    T: ::serde::de::DeserializeOwned,
+    T: DeserializeOwned,
 {
-    pub fn parse_owned(&self) -> Result<Response<'static, T>> {
+    pub fn parse<'a>(&self) -> Result<Response<'a, T>> {
         let bytes = self.chunk.as_ref();
         serde_json::from_slice(bytes).chain_err(|| ErrorKind::Deserialize(bytes.to_vec()))
     }
@@ -56,11 +46,11 @@ impl<T> Future for FutureResponse<T> {
 
 impl<T> FutureResponse<T>
 where
-    T: Clone + ::serde::de::DeserializeOwned + 'static,
+    T: Clone + DeserializeOwned + 'static,
 {
     pub fn parse(self) -> Box<Future<Item = Response<'static, T>, Error = Error>> {
         Box::new(self.0.and_then(
-            |res| res.parse_owned().map(|parsed| parsed.clone()),
+            |res| res.parse().map(|parsed| parsed.clone()),
         ))
     }
 }
@@ -171,7 +161,7 @@ where
 
     fn get<T>(&self, resource: &str) -> FutureResponse<T>
     where
-        T: ::serde::de::DeserializeOwned + 'static,
+        T: 'static,
     {
         // TODO: Don't unwrap
         let none: Option<String> = None;
@@ -181,7 +171,7 @@ where
     fn get_with_options<O, T>(&self, resource: &str, options: Option<O>) -> FutureResponse<T>
     where
         O: fmt::Display,
-        T: ::serde::de::DeserializeOwned + 'static,
+        T: 'static,
     {
         // TODO: Don't unwrap
         self.send_request(self.request(resource, options).unwrap())
